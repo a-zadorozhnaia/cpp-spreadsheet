@@ -24,6 +24,14 @@ struct Position {
     static const int MAX_ROWS = 16384;
     static const int MAX_COLS = 16384;
     static const Position NONE;
+
+    struct PositionHasher {
+        size_t operator()(const Position& pos) const {
+            auto h1 = std::hash<int>{}(pos.row);
+            auto h2 = std::hash<int>{}(pos.col);
+            return h1 + h2 * 13;
+        };
+    };
 };
 
 struct Size {
@@ -37,9 +45,9 @@ struct Size {
 class FormulaError {
 public:
     enum class Category {
-        Ref,    // ссылка на ячейку с некорректной позицией
-        Value,  // ячейка не может быть трактована как число
-        Div0,  // в результате вычисления возникло деление на ноль
+        Ref,         // ссылка на ячейку с некорректной позицией
+        Value,       // ячейка не может быть трактована как число
+        Arithmetic,  // в результате вычисления возникло деление на ноль
     };
 
     FormulaError(Category category);
