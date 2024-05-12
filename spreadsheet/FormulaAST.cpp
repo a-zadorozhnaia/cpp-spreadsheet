@@ -145,24 +145,29 @@ public:
     }
 
     double Evaluate(const std::function<double(Position)>& get) const override {
+        using namespace std::literals;
         double result = 0.0;
+        auto lhs_value = lhs_->Evaluate(get);
+        auto rhs_value = rhs_->Evaluate(get);
         switch (type_) {
         case Add:
-            result = lhs_->Evaluate(get) + rhs_->Evaluate(get);
+            result = lhs_value + rhs_value;
             break;
         case Subtract:
-            result = lhs_->Evaluate(get) - rhs_->Evaluate(get);
+            result = lhs_value - rhs_value;
             break;
         case Multiply:
-            result = lhs_->Evaluate(get) * rhs_->Evaluate(get);
+            result = lhs_value * rhs_value;
             break;
         case Divide:
-            result = lhs_->Evaluate(get) / rhs_->Evaluate(get);
+            if (std::fabs(rhs_value) < std::numeric_limits<double>::epsilon()) {
+                std::throw_with_nested(FormulaError(FormulaError::Category::Arithmetic));
+            }
+            result = lhs_value / rhs_value;
             break;
         }
 
         if (!std::isfinite(result)) {
-            using namespace std::literals;
             std::throw_with_nested(FormulaError(FormulaError::Category::Arithmetic));
         }
 
@@ -204,16 +209,11 @@ public:
     }
 
     double Evaluate(const std::function<double(Position)>& get) const override {
-        double result = 0.0;
-        switch (type_) {
-        case UnaryPlus:
-            result = operand_->Evaluate(get);
-            break;
-        case UnaryMinus:
-            result = operand_->Evaluate(get) * (-1.);
-            break;
+        auto value = operand_->Evaluate(get);
+        if (type_ == UnaryMinus) {
+            return value * (-1.);
         }
-        return result;
+        return value;
     }
 
 private:
